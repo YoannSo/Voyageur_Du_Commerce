@@ -28,9 +28,10 @@ class Noeud:
         self.name=name
 
 class Circuit:
-    noeuds=[]
-    cout=0
-    long = longevite
+    def __init__(self):
+        self.noeuds=[]
+        self.cout=0
+        self.long = longevite
     
     def createTest(self,graphe):
         for noeud in graphe.noeuds:
@@ -55,6 +56,11 @@ class Circuit:
         self.noeuds=myNewCircuit
         if needToUpdate:
             self.updateCout()
+            
+    def createWithNoeuds(self,noeuds):
+            self.noeuds=noeuds
+            self.updateCout()
+
     def muter(self):
         pos1 = random.randint(0,len(self.noeuds)-1)
         pos2 = random.randint(0,len(self.noeuds)-1)
@@ -84,6 +90,17 @@ class Circuit:
              newCout+=math.dist(self.noeuds[i].coor,self.noeuds[i+1].coor)
         self.cout=newCout
     
+    def croisement(self,circuitUseForCroisement):
+        nbNoeud=len(circuitUseForCroisement.noeuds)
+        randomIndex=random.randint(1,nbNoeud-1)
+        
+        tempCircuit1=self.noeuds[0:randomIndex]
+        tempCircuit2=circuitUseForCroisement.noeuds[randomIndex:nbNoeud]
+        
+        newCircuit=tempCircuit1
+        newCircuit.extend(tempCircuit2)
+        return newCircuit
+
     def print(self):
         string=""
         for i in range(len(self.noeuds)-1):
@@ -112,6 +129,15 @@ class Graphe:
             if noeud not in circuit:
                 result.append(noeud)
         return result
+            
+
+    def retirerLesPires(circuits):
+        if(len(circuits)>popInitial):
+            nbARetirer=len(circuits)-popInitial
+            tempCircuit=circuits.sort(key=attrgetter('cout'))
+            result=[]
+            for i in range(nbARetirer,popInitial):
+                result.append(circuits[i])
 
 
 
@@ -137,8 +163,37 @@ for i in range (20):
     individu.updateCout()
     population.append(individu)
 
-firstGraphe.plot()
+listNoeuds=[]
 
-mutation(population)
+for i in range(4):
+    randX=random.randint(1,100)
+    randY=random.randint(1,100)
+    noeud=Noeud([randX,randY],i)
+    listNoeuds.append(noeud)
+
+
+
+firstGraphe=Graphe(listNoeuds)
+
+circuit = Circuit()
+circuitTemp=Circuit()
+circuitTemp.createTest(firstGraphe)
+circuit.createTest(firstGraphe)
+
+
+circuit.swapDoublon(firstGraphe)
+
+print("c1:")
+
+circuit.print()
+print("c2")
+
+circuitTemp.print()
+
+test=Circuit()
+list=circuitTemp.croisement(circuit)
+test.createWithNoeuds(list)
+print("Croisement de c1 et c2")
+test.print()
 
 
