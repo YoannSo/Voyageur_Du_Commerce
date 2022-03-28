@@ -2,12 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 import math
+import copy
 
-longevite = 5
-popInitial = 20
-croisementParCycle = 6
-cycleMax=10000
-nbMutation = 3
 
 def mutation (pop):
     for i in range (nbMutation):
@@ -32,15 +28,11 @@ class Circuit:
         self.noeuds=[]
         self.cout=0
         self.long = longevite
-    
-    def createTest(self,graphe):
-        for noeud in graphe.noeuds:
-            self.noeuds.append(graphe.noeuds[1])
-
 
     def genererCircuit(self,graphe):
         self.noeuds = graphe.noeuds
         random.shuffle(self.noeuds)
+        self.updateCout()
 
     def swapDoublon(self,graphe):
         myNewCircuit=[]
@@ -50,8 +42,8 @@ class Circuit:
                 myNewCircuit.append(noeud)
             else:
                 noeudsNeeded=graphe.getAllNoeudNotInCircuit(myNewCircuit)
-                random_index = random.randint(0,len(noeudsNeeded)-1)
-                myNewCircuit.append(noeudsNeeded[random_index])
+                if(len(noeudsNeeded)>0):
+                    myNewCircuit.append(random.choice(noeudsNeeded))
                 needToUpdate=True
         self.noeuds=myNewCircuit
         if needToUpdate:
@@ -71,41 +63,35 @@ class Circuit:
         self.noeuds[pos2] = noeud1
         self.updateCout()
 
-    def estHamiltonien(self,graphe):
-        if (len(self.noeuds)!=len(graphe.noeuds)):
-            return False
-        
-        for i in range (0,len(graphe.noeuds)):
-            test = False
-            for j in range (0,len(self.noeuds)):
-                if(graphe.noeuds[i].name == self.noeuds[j].name):
-                    test = True
-            if test==False :
-                return False
-        return True
     
     def updateCout(self):
         newCout=0
         for i in range(len(self.noeuds)-1):
              newCout+=math.dist(self.noeuds[i].coor,self.noeuds[i+1].coor)
+        newCout+=math.dist(self.noeuds[0].coor,self.noeuds[-1].coor)
         self.cout=newCout
     
-    def croisement(self,circuitUseForCroisement):
+    def croisement(self,circuitUseForCroisement,graphe):
         nbNoeud=len(circuitUseForCroisement.noeuds)
         randomIndex=random.randint(1,nbNoeud-1)
-        
         tempCircuit1=self.noeuds[0:randomIndex]
-        tempCircuit2=circuitUseForCroisement.noeuds[randomIndex:nbNoeud]
-        
         newCircuit=tempCircuit1
-        newCircuit.extend(tempCircuit2)
-        return newCircuit
+        for i in range(randomIndex,len(circuitUseForCroisement.noeuds)):
+            addedValue=circuitUseForCroisement.noeuds[i]
+            if(addedValue in newCircuit):
+                addedValue=self.noeuds[i]
+            newCircuit.append(circuitUseForCroisement.noeuds[i])
+        myCircuitSon=Circuit()
+        myCircuitSon.createWithNoeuds(newCircuit)
+        myCircuitSon.swapDoublon(graphe)
+        return myCircuitSon
+
 
     def print(self):
         string=""
-        for i in range(len(self.noeuds)-1):
+        for i in range(len(self.noeuds)):
                 string+=str(self.noeuds[i].name)+"->"
-        string+=str(self.noeuds[-1].name)
+        string+=str(self.noeuds[0].name)
         print(string)
         
 # Graphe
@@ -114,12 +100,10 @@ class Graphe:
         self.noeuds=noeuds
     def plot(self):
         for i in range(len(self.noeuds)):
-            for j in range(i,len(self.noeuds)):
-                
+            for j in range(i,len(self.noeuds)):                
                 x=[self.noeuds[i].coor[0],self.noeuds[j].coor[0]]
                 y=[self.noeuds[i].coor[1],self.noeuds[j].coor[1]]
-                plt.plot(x,y,marker = 'o')
-                
+                plt.plot(x,y,marker = 'o')                
                 cout=math.dist(self.noeuds[i].coor,self.noeuds[j].coor)
         plt.show()
 
@@ -140,60 +124,42 @@ class Graphe:
                 result.append(circuits[i])
 
 
+    def selection_roulette(self,population):
+        max = sum(1/chromosome.cout for chromosome in population)
+        pick = random.uniform(0, max)
+        current = 0
+        for chromosome in population:
+            current += 1/chromosome.cout
+            print(current)
+            if current > pick:
+                return chromosome
 
+longevite = 5
+nbVille = 5
+population = 5
+croisementParCycle = 6
+cycleMax=10000
+nbMutation = 3
 
-listNoeuds=[]
+def main():
+    print("Hello World!")
+    listNoeuds=[]
+    listCircuit=[]
+    for i in range(nbVille):
+        randX=random.randint(1,100)
+        randY=random.randint(1,100)
+        noeud=Noeud([randX,randY],i)
+        listNoeuds.append(noeud)
+    myGraphe=Graphe(listNoeuds)
+    myGraphe.plot()
+    for i in range(population):
+        myRandomCircuit=Circuit()
+        myRandomCircuit.genererCircuit(myGraphe)
+        copyOfCircuit=copy.deepcopy(myRandomCircuit)
+        listCircuit.append(copyOfCircuit)
 
-for i in range(20):
-    randX=random.randint(1,1000)
-    randY=random.randint(1,1000)
-    noeud=Noeud([randX,randY],i)
-    listNoeuds.append(noeud)
-
-
-
-firstGraphe=Graphe(listNoeuds)
-
-
-
-population = []
-for i in range (20):
-    individu = Circuit()
-    individu.genererCircuit(firstGraphe)
-    individu.updateCout()
-    population.append(individu)
-
-listNoeuds=[]
-
-for i in range(4):
-    randX=random.randint(1,100)
-    randY=random.randint(1,100)
-    noeud=Noeud([randX,randY],i)
-    listNoeuds.append(noeud)
-
-
-
-firstGraphe=Graphe(listNoeuds)
-
-circuit = Circuit()
-circuitTemp=Circuit()
-circuitTemp.createTest(firstGraphe)
-circuit.createTest(firstGraphe)
-
-
-circuit.swapDoublon(firstGraphe)
-
-print("c1:")
-
-circuit.print()
-print("c2")
-
-circuitTemp.print()
-
-test=Circuit()
-list=circuitTemp.croisement(circuit)
-test.createWithNoeuds(list)
-print("Croisement de c1 et c2")
-test.print()
-
+        # On Mute, on Croise, On reture pire, on supprime longeivité
+        
+if __name__ == "__main__":
+    main()
 
