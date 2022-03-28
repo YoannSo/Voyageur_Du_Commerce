@@ -1,9 +1,17 @@
+from operator import attrgetter
 import numpy as np
 import matplotlib.pyplot as plt
 import random
 import math
 import copy
 
+
+longevite = 5
+nbVille = 10
+population = 30
+croisementParCycle = 5
+cycleMax=10000
+nbMutation = 1
 
 def mutation (pop):
     for i in range (nbMutation):
@@ -115,31 +123,38 @@ class Graphe:
         return result
             
 
-    def retirerLesPires(circuits):
-        if(len(circuits)>popInitial):
-            nbARetirer=len(circuits)-popInitial
-            tempCircuit=circuits.sort(key=attrgetter('cout'))
-            result=[]
-            for i in range(nbARetirer,popInitial):
-                result.append(circuits[i])
+def retirerLesPires(circuits):
+    if(len(circuits)<population):
+        #A faire la prochaine fois
+        newListCircuit=[]
+        for i in range(0,population):
+            val = selection_roulette(circuits)
+            circuits.remove(val)
+            newListCircuit.append(val)
+        return newListCircuit
+    else:
+        return circuits
+        
 
 
-    def selection_roulette(self,population):
-        max = sum(1/chromosome.cout for chromosome in population)
-        pick = random.uniform(0, max)
-        current = 0
-        for chromosome in population:
-            current += 1/chromosome.cout
-            print(current)
-            if current > pick:
-                return chromosome
+def ajouterPop(circuits,myGraphe):
+    manquant = len(circuits)-population
+    while (manquant<0 ):
+        myRandomCircuit=Circuit()
+        myRandomCircuit.genererCircuit(myGraphe)
+        copyOfCircuit=copy.deepcopy(myRandomCircuit)
+        circuits.append(copyOfCircuit)
 
-longevite = 5
-nbVille = 5
-population = 5
-croisementParCycle = 6
-cycleMax=10000
-nbMutation = 3
+
+def selection_roulette(circuits):
+    max = sum(1/circuit.cout for circuit in circuits)
+    pick = random.uniform(0, max)
+    current = 0
+    for circuit in circuits:
+        current += 1/circuit.cout
+        if current > pick:
+            return circuit
+
 
 def main():
     print("Hello World!")
@@ -159,7 +174,21 @@ def main():
         listCircuit.append(copyOfCircuit)
 
         # On Mute, on Croise, On reture pire, on supprime longeivité
-        
+        for i in range (croisementParCycle):
+            parent1 = selection_roulette(listCircuit)
+            parent2 = selection_roulette(listCircuit)
+            enfant = parent1.croisement(parent2,myGraphe)
+            parent1.long -=1
+            parent2.long -=1
+            listCircuit.append(copy.deepcopy(enfant))
+        mutation(listCircuit)
+        mortIndividu(listCircuit)
+        listCircuit=retirerLesPires(listCircuit)
+        ajouterPop(listCircuit,myGraphe)
+    for x in listCircuit:
+        print("---------------------------")
+        x.print()
+        print(x.cout)
 if __name__ == "__main__":
     main()
 
