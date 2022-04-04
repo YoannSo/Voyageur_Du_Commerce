@@ -7,12 +7,12 @@ import math
 import copy
 
 
-longevite = 5
-nbVille = 5
-population = 5
-croisementParCycle = 1
-cycleMax=100
-nbMutation = 1
+longevite = 20
+nbVille = 9
+population = 100
+croisementParCycle = 30
+cycleMax=500
+nbMutation = 10
 
 def mutation (pop):
     for i in range (nbMutation):
@@ -46,14 +46,16 @@ class Circuit:
     def swapDoublon(self,graphe):
         myNewCircuit=[]
         needToUpdate=False
+        test=0
         for noeud in self.noeuds:
-            if noeud not in myNewCircuit:
-                myNewCircuit.append(noeud)
-            else:
+            if checkIfNameInCircuit(myNewCircuit,noeud.name):
                 noeudsNeeded=graphe.getAllNoeudNotInCircuit(myNewCircuit)
                 if(len(noeudsNeeded)>0):
-                    myNewCircuit.append(random.choice(noeudsNeeded))
+                    test=random.choice(noeudsNeeded)
+                    myNewCircuit.append(test)
                 needToUpdate=True
+            else:
+                myNewCircuit.append(noeud)
         self.noeuds=myNewCircuit
         if needToUpdate:
             self.updateCout()
@@ -93,7 +95,6 @@ class Circuit:
         myCircuitSon=Circuit()
         myCircuitSon.createWithNoeuds(newCircuit)
         myCircuitSon.swapDoublon(graphe)
-        myCircuitSon.print()
         return myCircuitSon
 
     def plotCircuit(self):
@@ -132,10 +133,15 @@ class Graphe:
     def getAllNoeudNotInCircuit(self,circuit):
         result = []
         for noeud in self.noeuds:
-            if noeud not in circuit:
+            if checkIfNameInCircuit(circuit,noeud.name)==False:
                 result.append(noeud)
         return result
-            
+
+def checkIfNameInCircuit(circuits,name):
+    for noeud in circuits:
+        if name == noeud.name:
+            return True
+    return False          
 
 def retirerLesPires(circuits):
     if(len(circuits)>population):
@@ -159,17 +165,21 @@ def ajouterPop(circuits,myGraphe):
         circuits.append(copyOfCircuit)
         manquant+=1
 
-def verification(listCircuit):
-    allPermut=list(itertools.permutations(listCircuit))
-    min=allPermut[0][0].cout
-    chemin=allPermut[0][0]
+def calculNoeud(noeuds):
+    newCout=0
+    for i in range(len(noeuds)-1):
+            newCout+=math.dist(noeuds[i].coor,noeuds[i+1].coor)
+    newCout+=math.dist(noeuds[0].coor,noeuds[-1].coor)
+    return newCout
+def verification(circuit):
+    listNoeud=circuit.noeuds
+    allPermut=list(itertools.permutations(listNoeud))
+    min=calculNoeud(allPermut[0])
     for permut in allPermut:
-        for circuit in permut:
-            circuit.updateCout()
-            if(min>circuit.cout):
-                min=circuit.cout
-                chemin=circuit
-    return chemin
+        value=calculNoeud(permut)
+        if(value<min):
+            min=value
+    print("Valeur minale code dure: "+str(min))
 
 def selection_roulette(circuits):
     max = sum(1/circuit.cout for circuit in circuits)
@@ -180,10 +190,31 @@ def selection_roulette(circuits):
         if current > pick:
             return circuit
 
+def moy(listCircuit):
+    min=listCircuit[0].cout
+    for x in listCircuit:
+        if x.cout<min:
+            min=x.cout
+    return min
+def plot_moyenne(moy):
+    for i in range(len(moy)-1):
+        x=moy[i][0],moy[i+1][0]
+        y=moy[i][1],moy[i+1][1]
+        plt.plot(x,y)
+    plt.show()
+def getMin(liste):
+    min=liste[0].cout
+    minIndex=0
+    for i in range (len(liste)):
+        if liste[i].cout<min:
+            min=liste[i].cout
+            minIndex=i
+    return liste[minIndex]
 
 def main():
     listNoeuds=[]
     listCircuit=[]
+    listVal=[]
     for i in range(nbVille):
         randX=random.randint(1,100)
         randY=random.randint(1,100)
@@ -202,8 +233,9 @@ def main():
         
     # On Mute, on Croise, On reture pire, on supprime longeivité
     for j in range(cycleMax):
+
         #Croisement
-        """
+        
         for i in range (0):
             parent1 = selection_roulette(listCircuit)
             parent2 = selection_roulette(listCircuit)
@@ -212,23 +244,27 @@ def main():
                 enfant.print()
                 parent1.long -=1
                 parent2.long -=1
-                #listCircuit.append(copy.deepcopy(enfant))
-        """
+                listCircuit.append(copy.deepcopy(enfant))
+    
         mutation(listCircuit)
         listCircuit=mortIndividu(listCircuit)
         listCircuit=retirerLesPires(listCircuit)
         ajouterPop(listCircuit,myGraphe)
         
         print("-----------Epoque "+str(j)+"----------------")
-        
+        tot=moy(listCircuit)
+        listVal.append((j,tot))
         for x in listCircuit:
             print("---------------------------")
             x.print()
             print(x.cout)
     print("Fini")
-    best = verification(listCircuit)
-    best.print()
-    best.plotCircuit()
+    
+    verification(listCircuit[0])
+    plot_moyenne(listVal)
+    plusPetitChemin = getMin(listCircuit)
+    plusPetitChemin.print()
+    plusPetitChemin.plotCircuit()
 if __name__ == "__main__":
     main()
 
