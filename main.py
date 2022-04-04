@@ -1,3 +1,4 @@
+import itertools
 from operator import attrgetter
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,10 +8,10 @@ import copy
 
 
 longevite = 5
-nbVille = 10
-population = 30
-croisementParCycle = 5
-cycleMax=10000
+nbVille = 5
+population = 5
+croisementParCycle = 1
+cycleMax=100
 nbMutation = 1
 
 def mutation (pop):
@@ -92,14 +93,27 @@ class Circuit:
         myCircuitSon=Circuit()
         myCircuitSon.createWithNoeuds(newCircuit)
         myCircuitSon.swapDoublon(graphe)
+        myCircuitSon.print()
         return myCircuitSon
 
+    def plotCircuit(self):
+        for i in range (len(self.noeuds)-1):
+            x=[self.noeuds[i].coor[0],self.noeuds[i+1].coor[0]]
+            y=[self.noeuds[i].coor[1],self.noeuds[i+1].coor[1]]
+            plt.plot(x,y,marker = 'o')
+        x=[self.noeuds[-1].coor[0],self.noeuds[0].coor[0]]
+        y=[self.noeuds[-1].coor[1],self.noeuds[0].coor[1]]
+        plt.plot(x,y,marker = 'o')
+        plt.show()
 
+
+        
     def print(self):
         string=""
         for i in range(len(self.noeuds)):
                 string+=str(self.noeuds[i].name)+"->"
         string+=str(self.noeuds[0].name)
+        string+="  cout:"+str(self.cout)
         print(string)
         
 # Graphe
@@ -124,12 +138,10 @@ class Graphe:
             
 
 def retirerLesPires(circuits):
-    if(len(circuits)<population):
-        #A faire la prochaine fois
+    if(len(circuits)>population):
         newListCircuit=[]
         for i in range(0,population):
             val = selection_roulette(circuits)
-            circuits.remove(val)
             newListCircuit.append(val)
         return newListCircuit
     else:
@@ -143,8 +155,21 @@ def ajouterPop(circuits,myGraphe):
         myRandomCircuit=Circuit()
         myRandomCircuit.genererCircuit(myGraphe)
         copyOfCircuit=copy.deepcopy(myRandomCircuit)
+        copyOfCircuit.updateCout()
         circuits.append(copyOfCircuit)
+        manquant+=1
 
+def verification(listCircuit):
+    allPermut=list(itertools.permutations(listCircuit))
+    min=allPermut[0][0].cout
+    chemin=allPermut[0][0]
+    for permut in allPermut:
+        for circuit in permut:
+            circuit.updateCout()
+            if(min>circuit.cout):
+                min=circuit.cout
+                chemin=circuit
+    return chemin
 
 def selection_roulette(circuits):
     max = sum(1/circuit.cout for circuit in circuits)
@@ -157,7 +182,6 @@ def selection_roulette(circuits):
 
 
 def main():
-    print("Hello World!")
     listNoeuds=[]
     listCircuit=[]
     for i in range(nbVille):
@@ -167,28 +191,44 @@ def main():
         listNoeuds.append(noeud)
     myGraphe=Graphe(listNoeuds)
     myGraphe.plot()
+
+    # Generation des circuits
     for i in range(population):
         myRandomCircuit=Circuit()
         myRandomCircuit.genererCircuit(myGraphe)
         copyOfCircuit=copy.deepcopy(myRandomCircuit)
+        copyOfCircuit.updateCout()
         listCircuit.append(copyOfCircuit)
-
-        # On Mute, on Croise, On reture pire, on supprime longeivité
-        for i in range (croisementParCycle):
+        
+    # On Mute, on Croise, On reture pire, on supprime longeivité
+    for j in range(cycleMax):
+        #Croisement
+        """
+        for i in range (0):
             parent1 = selection_roulette(listCircuit)
             parent2 = selection_roulette(listCircuit)
-            enfant = parent1.croisement(parent2,myGraphe)
-            parent1.long -=1
-            parent2.long -=1
-            listCircuit.append(copy.deepcopy(enfant))
+            if(parent1!=parent2):
+                enfant = parent1.croisement(parent2,myGraphe)
+                enfant.print()
+                parent1.long -=1
+                parent2.long -=1
+                #listCircuit.append(copy.deepcopy(enfant))
+        """
         mutation(listCircuit)
-        mortIndividu(listCircuit)
+        listCircuit=mortIndividu(listCircuit)
         listCircuit=retirerLesPires(listCircuit)
         ajouterPop(listCircuit,myGraphe)
-    for x in listCircuit:
-        print("---------------------------")
-        x.print()
-        print(x.cout)
+        
+        print("-----------Epoque "+str(j)+"----------------")
+        
+        for x in listCircuit:
+            print("---------------------------")
+            x.print()
+            print(x.cout)
+    print("Fini")
+    best = verification(listCircuit)
+    best.print()
+    best.plotCircuit()
 if __name__ == "__main__":
     main()
 
