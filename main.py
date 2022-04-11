@@ -7,12 +7,12 @@ import math
 import copy
 
 
-longevite = 20
-nbVille = 9
+longevite = 10
+nbVille = 15
 population = 100
-croisementParCycle = 30
-cycleMax=10000
-nbMutation = 10
+croisementParCycle = 50
+cycleMax=1000
+nbMutation = 1
 
 def mutation (pop):
     for i in range (nbMutation):
@@ -196,12 +196,14 @@ def moy(listCircuit):
         if x.cout<min:
             min=x.cout
     return min
+
 def plot_moyenne(moy):
     for i in range(len(moy)-1):
         x=moy[i][0],moy[i+1][0]
         y=moy[i][1],moy[i+1][1]
         plt.plot(x,y)
     plt.show()
+
 def getMin(liste):
     min=liste[0].cout
     minIndex=0
@@ -232,16 +234,16 @@ def main():
         listCircuit.append(copyOfCircuit)
         
     # On Mute, on Croise, On reture pire, on supprime longeivité
-    for j in range(cycleMax):
+    minSave=getMin(listCircuit)
 
-        #Croisement
+    for j in range(cycleMax):
         
-        for i in range (0):
+        #Croisement
+        for i in range (croisementParCycle):
             parent1 = selection_roulette(listCircuit)
             parent2 = selection_roulette(listCircuit)
             if(parent1!=parent2):
                 enfant = parent1.croisement(parent2,myGraphe)
-                enfant.print()
                 parent1.long -=1
                 parent2.long -=1
                 listCircuit.append(copy.deepcopy(enfant))
@@ -251,20 +253,23 @@ def main():
         listCircuit=retirerLesPires(listCircuit)
         ajouterPop(listCircuit,myGraphe)
         
-        print("-----------Epoque "+str(j)+"----------------")
         tot=moy(listCircuit)
         listVal.append((j,tot))
-        for x in listCircuit:
-            print("---------------------------")
-            x.print()
-            print(x.cout)
+
+        minTemp = getMin(listCircuit)
+        if (minSave.cout>minTemp.cout):
+            minSave = copy.deepcopy(minTemp)
+
     print("Fini")
+    listCircuit.sort(key=attrgetter('cout'))
     
+    print("MinSave:"+str(minSave.cout))
+    """
     verification(listCircuit[0])
     plot_moyenne(listVal)
-    plusPetitChemin = getMin(listCircuit)
-    plusPetitChemin.print()
-    plusPetitChemin.plotCircuit()
+    """
+    minSave.print()
+    minSave.plotCircuit()
 if __name__ == "__main__":
     main()
 
