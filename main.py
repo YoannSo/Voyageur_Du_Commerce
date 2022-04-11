@@ -11,7 +11,7 @@ longevite = 20
 nbVille = 9
 population = 100
 croisementParCycle = 30
-cycleMax=500
+cycleMax=10000
 nbMutation = 10
 
 def mutation (pop):
