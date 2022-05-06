@@ -1,5 +1,6 @@
 import itertools
 from operator import attrgetter
+from tkinter import * 
 import numpy as np
 import matplotlib.pyplot as plt
 import random
@@ -7,14 +8,8 @@ import math
 import copy
 
 
-longevite = 10
-nbVille = 15
-population = 100
-croisementParCycle = 50
-cycleMax=1000
-nbMutation = 1
 
-def mutation (pop):
+def mutation (pop,nbMutation):
     for i in range (nbMutation):
         tmp=random.randint(0,len(pop)-1)
         pop[tmp].muter()
@@ -33,7 +28,7 @@ class Noeud:
         self.name=name
 
 class Circuit:
-    def __init__(self):
+    def __init__(self,longevite):
         self.noeuds=[]
         self.cout=0
         self.long = longevite
@@ -92,7 +87,7 @@ class Circuit:
             if(addedValue in newCircuit):
                 addedValue=self.noeuds[i]
             newCircuit.append(circuitUseForCroisement.noeuds[i])
-        myCircuitSon=Circuit()
+        myCircuitSon=Circuit(self.long)
         myCircuitSon.createWithNoeuds(newCircuit)
         myCircuitSon.swapDoublon(graphe)
         return myCircuitSon
@@ -143,7 +138,7 @@ def checkIfNameInCircuit(circuits,name):
             return True
     return False          
 
-def retirerLesPires(circuits):
+def retirerLesPires(circuits,population):
     if(len(circuits)>population):
         newListCircuit=[]
         for i in range(0,population):
@@ -155,10 +150,10 @@ def retirerLesPires(circuits):
         
 
 
-def ajouterPop(circuits,myGraphe):
+def ajouterPop(circuits,myGraphe,population,long):
     manquant = len(circuits)-population
     while (manquant<0 ):
-        myRandomCircuit=Circuit()
+        myRandomCircuit=Circuit(long)
         myRandomCircuit.genererCircuit(myGraphe)
         copyOfCircuit=copy.deepcopy(myRandomCircuit)
         copyOfCircuit.updateCout()
@@ -213,7 +208,13 @@ def getMin(liste):
             minIndex=i
     return liste[minIndex]
 
-def main():
+def lancerJeu():
+    longevite = int(longeviteTk.get())
+    nbVille = int(nbVilleTk.get())
+    population = int(populationTk.get())
+    croisementParCycle = int(croisementParCycleTk.get())
+    cycleMax=int(cycleMaxTk.get())
+    nbMutation = int(nbMutationTk.get())
     listNoeuds=[]
     listCircuit=[]
     listVal=[]
@@ -227,7 +228,7 @@ def main():
 
     # Generation des circuits
     for i in range(population):
-        myRandomCircuit=Circuit()
+        myRandomCircuit=Circuit(longevite)
         myRandomCircuit.genererCircuit(myGraphe)
         copyOfCircuit=copy.deepcopy(myRandomCircuit)
         copyOfCircuit.updateCout()
@@ -248,10 +249,10 @@ def main():
                 parent2.long -=1
                 listCircuit.append(copy.deepcopy(enfant))
     
-        mutation(listCircuit)
+        mutation(listCircuit,nbMutation)
         listCircuit=mortIndividu(listCircuit)
-        listCircuit=retirerLesPires(listCircuit)
-        ajouterPop(listCircuit,myGraphe)
+        listCircuit=retirerLesPires(listCircuit,population)
+        ajouterPop(listCircuit,myGraphe,population,longevite)
         
         tot=moy(listCircuit)
         listVal.append((j,tot))
@@ -264,12 +265,73 @@ def main():
     listCircuit.sort(key=attrgetter('cout'))
     
     print("MinSave:"+str(minSave.cout))
-    """
-    verification(listCircuit[0])
+
+    if(nbVille<10):
+        verification(listCircuit[0])
     plot_moyenne(listVal)
-    """
+
     minSave.print()
     minSave.plotCircuit()
-if __name__ == "__main__":
-    main()
+
+
+window = Tk()
+window.geometry(str(200)+"x"+str(300))
+window.title("IA Project")
+
+
+
+_ = Label(window, text="Longevite: (2 - 10)")
+_.pack()
+longeviteTk = IntVar(window)
+longeviteTk.set(5)
+_ = Spinbox(window, from_=2, to=10, textvariable=longeviteTk)
+_.pack()
+
+_ = Label(window, text="Nombre de ville: (5-20)")
+_.pack()
+nbVilleTk = IntVar(window)
+nbVilleTk.set(7)
+_ = Spinbox(window, from_=5, to=20, textvariable=nbVilleTk)
+_.pack()
+
+_ = Label(window, text="Taille de la population: (10-100)")
+_.pack()
+populationTk = IntVar(window)
+populationTk.set(50)
+_ = Spinbox(window, from_=10, to=100, textvariable=populationTk)
+_.pack()
+
+_ = Label(window, text="Croisement par cycle: (1-10)")
+_.pack()
+croisementParCycleTk = IntVar(window)
+croisementParCycleTk.set(5)
+_ = Spinbox(window, from_=1, to=10, textvariable=croisementParCycleTk)
+_.pack()
+
+_ = Label(window, text="Nombre de cycles: (10-1000)")
+_.pack()
+cycleMaxTk = IntVar(window)
+cycleMaxTk.set(300)
+_ = Spinbox(window, from_=10, to=1000, textvariable=cycleMaxTk)
+_.pack()
+
+_ = Label(window, text="Nombre de mutation par cycle: (1-10)")
+_.pack()
+nbMutationTk = IntVar(window)
+nbMutationTk.set(1)
+_ = Spinbox(window, from_=1, to=10, textvariable=nbMutationTk)
+_.pack()
+
+
+
+_ = Button(window, text="Lancer l'algorithme", command=lancerJeu)
+_.pack()
+
+window.mainloop()
+
+"""
+def main():
+   
+    
+"""
 
